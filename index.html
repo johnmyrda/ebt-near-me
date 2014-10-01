@@ -74,17 +74,19 @@
       .addTo(map)
       .on('done', function(layer) {
         // change the query for the first layer
-        var subLayerOptions = {
-          sql: "SELECT * FROM ebt_locations_in_ca LIMIT 10",
-          cartocss: "#ebt_locations_in_ca{marker-fill: #F84F40; marker-width: 8; marker-line-color: white; marker-line-width: 2; marker-clip: false; marker-allow-overlap: true;}"
-        }
+         var subLayerOptions = {
+           sql: "SELECT * FROM ebt_atm_locations_solano_county_no_surcharge LIMIT 10",
+           cartocss: "#ebt_atm_locations_solano_county_no_surcharge{marker-fill: green; marker-width: 8; marker-line-color: white; marker-line-width: 2; marker-clip: false; marker-allow-overlap: true;}"
+         }
 
         var sublayer = layer.getSubLayer(0);
 
         sublayer.set(subLayerOptions);
-        sublayer.infowindow.set('template', $('#infowindow_template').html());
+//        sublayer.infowindow.set('template', $('#infowindow_template').html());
+//        sublayer.infowindow.set('template', $('#infowindow_template_atm').html());
 
         sublayers.push(sublayer);
+
         detectUserLocation();
       }).on('error', function() {
         //log the error
@@ -115,8 +117,11 @@
     }
 
     function mapToPosition(position){
-      lon = position.coords.longitude;
-      lat = position.coords.latitude;
+//      lon = position.coords.longitude;
+//      lat = position.coords.latitude;
+// (COMMENTED OUT FOR SOLANO COUNTY TESTING)
+      lon = -122.2506256;
+      lat = 38.1225014;
       updateQuery();
       map.setView(new L.LatLng(lat,lon), 15);
       new L.CircleMarker([lat,lon],{radius: 4}).addTo(map);
@@ -128,8 +133,9 @@
 
     function updateQuery() {
       sublayers[0].set({
-        sql: "SELECT cartodb_id, the_geom, the_geom_webmercator, store_name, address FROM ebt_locations_in_ca ORDER BY the_geom <-> ST_SetSRID(ST_MakePoint("+lon+","+lat+"),4326) ASC LIMIT "+total+"",
-        cartocss: "#ebt_locations_in_ca{[mapnik-geometry-type = point]{marker-fill: #009d28; marker-line-color: #fff; marker-allow-overlap: true;}}"
+      // ebt_atm_locations_solano_county_no_surcharge
+        sql: "SELECT cartodb_id, the_geom, the_geom_webmercator, name, address, cash_limit FROM ebt_atm_locations_solano_county_no_surcharge ORDER BY the_geom <-> ST_SetSRID(ST_MakePoint("+lon+","+lat+"),4326) ASC LIMIT "+total+"",
+        cartocss: "#ebt_atm_locations_solano_county_no_surcharge{[mapnik-geometry-type = point]{marker-fill: green; marker-line-color: #000; marker-allow-overlap: true;}}"
       });
     }
 
@@ -143,19 +149,23 @@
   }
 
   </script>
-  <script type="infowindow/html" id="infowindow_template">
-    <div class="cartodb-popup">
-      <a href="#close" class="cartodb-popup-close-button close">x</a>
-      <div class="cartodb-popup-content-wrapper">
-        <div class="cartodb-popup-content">
-          <h4>Store Name</h4>
-          <p>{{content.data.store_name}}</p>
-          <h4>Address</h4>
-          <p>{{content.data.address}}</p>
-        </div>
-      </div>
-    </div>
+<!--
+  <script type="infowindow/html" id="infowindow_template_atm">
+//    <div class="cartodb-popup">
+//      <a href="#close" class="cartodb-popup-close-button close">x</a>
+//      <div class="cartodb-popup-content-wrapper">
+//        <div class="cartodb-popup-content">
+//          <h4>Name</h4>
+//          <p>{{content.data.name}}</p>
+//          <h4>Address</h4>
+//          <p>{{content.data.address}}</p>
+//          <h4>Limit</h4>
+//          <p>${{content.data.cash_limit}}</p>
+//        </div>
+//      </div>
+//    </div>
   </script>
+-->
   <!-- G O O G L E  A N A L Y T I C S -->
   <script>
     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){

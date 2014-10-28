@@ -29,11 +29,61 @@
 var map;
 var defaultZoom = 10; // bug...using bounds instead of zoom throughout
 
+// Retail layer
+var retail_layer = new google.maps.FusionTablesLayer({
+  query: {
+    select: 'latitude',
+    from: '1Vb3R1ufxWU3cPwBg0kYiKEcJJ-lEn_vbbbWKplfo',
+    where: "state = 'CA'"
+  }
+});
+
+google.maps.event.addListener(retail_layer, 'click', function(e) {
+  e.infoWindowHtml = "<b>" + e.row['store_name'].value + "</b><br><br>";
+  e.infoWindowHtml += e.row['address'].value + "<br>";
+});
+
+// ATM layer
+var atm_layer = new google.maps.FusionTablesLayer({
+  query: {
+    select: 'FULL_ADDRESS',
+    from: '1ls1MKw-iQdNYHAGh_wbtsBaGF0t2qgJgJYbHFPxI'},
+  styles: [
+    {where: "SC = 'NO'", markerOptions: {iconName: 'large_green'} },
+    {where: "SC = 'YES'",markerOptions: {iconName: 'large_yellow'}}
+  ]
+});
+
+var directions_pre_link;
+if (/iPhone/i.test(navigator.userAgent)) {
+  directions_pre_link = "<a href='http://maps.google.com/?saddr=Current%20Location&daddr="
+} else if (/Android/i.test(navigator.userAgent)) {
+    directions_pre_link = "<a href='geo:"
+} else {
+    directions_pre_link = "<a href='http://maps.google.com?q="
+}
+
+google.maps.event.addListener(atm_layer, 'click', function(e) {
+  e.infoWindowHtml = "This is a <b>" + e.row['DEVICE TYPE'].value + "</b> at <b>" + e.row['NAME'].value + "</b>.<br>";
+  e.infoWindowHtml += "It costs <b>$" + e.row['SC AMOUNT'].value + "</b> and you can get up to <b>$" + e.row['CASH LIMIT'].value + "</b>.<br><br>";
+  e.infoWindowHtml += directions_pre_link + encodeURIComponent(e.row['FULL_ADDRESS'].value) + "'>Directions</a>" + "<br>";
+  console.log(e.infoWindowHtml);
+});
+
 function initialize() {
   var san_francisco = new google.maps.LatLng(37.7833, -122.4167);
   var mapOptions = {
     zoom: 7,
     disableDefaultUI: true,
+    styles: [
+      {
+        featureType: "poi",
+        elementType: "all",
+        stylers: [
+          { visibility: "off" }
+        ]
+      }
+    ]
   };
 
   map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
@@ -41,18 +91,6 @@ function initialize() {
 
   // Try HTML5 geolocation
   navigator.geolocation.getCurrentPosition(foundLocation, handleNoGeolocation);
-
-  // Set map options
-  var styles = [
-    {
-      featureType: "poi",
-      elementType: "all",
-      stylers: [
-        { visibility: "off" }
-      ]
-    }
-  ];
-  map.setOptions({styles: styles});
 
   // Geomarker
   var GeoMarker = new GeolocationMarker();
@@ -65,51 +103,6 @@ function initialize() {
     });
 
   GeoMarker.setMap(map);
-
-  // Add retail layer
-  retail_layer = new google.maps.FusionTablesLayer({
-    query: {
-      select: 'latitude',
-      from: '1Vb3R1ufxWU3cPwBg0kYiKEcJJ-lEn_vbbbWKplfo',
-      where: "state = 'CA'"
-    },
-    map : map
-  });
-
-  // Retail info window
-  google.maps.event.addListener(retail_layer, 'click', function(e) {
-    e.infoWindowHtml = "<b>" + e.row['store_name'].value + "</b><br><br>";
-    e.infoWindowHtml += e.row['address'].value + "<br>";
-  });
-
-  // Add ATM layer
-  atm_layer = new google.maps.FusionTablesLayer({
-    query: {
-      select: 'FULL_ADDRESS',
-      from: '1ls1MKw-iQdNYHAGh_wbtsBaGF0t2qgJgJYbHFPxI'},
-    styles: [
-      {where: "SC = 'NO'", markerOptions: {iconName: 'large_green'} },
-      {where: "SC = 'YES'",markerOptions: {iconName: 'large_yellow'}}
-    ],
-    map : map
-  });
-
-  // ATM info window
-  var directions_pre_link;
-  if (/iPhone/i.test(navigator.userAgent)) {
-    directions_pre_link = "<a href='http://maps.google.com/?saddr=Current%20Location&daddr="
-  } else if (/Android/i.test(navigator.userAgent)) {
-      directions_pre_link = "<a href='geo:"
-  } else {
-      directions_pre_link = "<a href='http://maps.google.com?q="
-  }
-
-  google.maps.event.addListener(atm_layer, 'click', function(e) {
-    e.infoWindowHtml = "This is a <b>" + e.row['DEVICE TYPE'].value + "</b> at <b>" + e.row['NAME'].value + "</b>.<br>";
-    e.infoWindowHtml += "It costs <b>$" + e.row['SC AMOUNT'].value + "</b> and you can get up to <b>$" + e.row['CASH LIMIT'].value + "</b>.<br><br>";
-    e.infoWindowHtml += directions_pre_link + encodeURIComponent(e.row['FULL_ADDRESS'].value) + "'>Directions</a>" + "<br>";
-    console.log(e.infoWindowHtml);
-  });
 
   // Search
   var markers = [];
@@ -142,16 +135,14 @@ function initialize() {
       };
 
       // Create a marker for each place.
-      // To do: Don't show new market
+      // To do: Don't show new marker
       var marker = new google.maps.Marker({
         map: map,
         icon: image,
         title: place.name,
         position: place.geometry.location
       });
-
       markers.push(marker);
-
       bounds.extend(place.geometry.location);
     }
 
@@ -170,8 +161,12 @@ function initialize() {
 
 function foundLocation(position) {
   var pos = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-  map.setZoom(defaultZoom);
+  map.setZoom(defaultZoom);it
   map.setCenter(pos);
+
+  // Only add layers upon first zoom
+  retail_layer.setMap(map)
+  atm_layer.setMap(map)
 }
 
 function handleNoGeolocation() {
@@ -179,7 +174,7 @@ function handleNoGeolocation() {
 
   var options = {
     map: map,
-    position: new google.maps.LatLng(60, 105),
+    position: new google.maps.LatLng(60, 105), // Don't start in Russia :(
     content: content
   };
 

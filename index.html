@@ -70,6 +70,42 @@ google.maps.event.addListener(atm_layer, 'click', function(e) {
   console.log(e.infoWindowHtml);
 });
 
+function LayerControl(controlDiv, layer) {
+  // Hack so it doesn't mess up layout before map loads
+  controlDiv.style.visibility = 'visible';
+
+  // Setup the click event listeners to toggle layer
+  google.maps.event.addDomListener(controlDiv, 'click', function() {
+    if (layer.getMap()) {
+      layer.setMap(null);
+    } else {
+      layer.setMap(map);
+    }
+  });
+}
+
+function foundLocation(position) {
+  var pos = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+  map.setZoom(defaultZoom);it
+  map.setCenter(pos);
+
+  // Only add layers upon first zoom
+  retail_layer.setMap(map)
+  atm_layer.setMap(map)
+}
+
+function handleNoGeolocation() {
+  var content = 'Error: The Geolocation service failed.';
+
+  var options = {
+    map: map,
+    position: new google.maps.LatLng(60, 105), // Don't start in Russia :(
+    content: content
+  };
+
+  map.setCenter(options.position);
+}
+
 function initialize() {
   var san_francisco = new google.maps.LatLng(37.7833, -122.4167);
   var mapOptions = {
@@ -103,6 +139,18 @@ function initialize() {
     });
 
   GeoMarker.setMap(map);
+
+  // Add retail layer controller
+  var retailControlDiv = document.getElementById("retail-toggler")
+  var retailControl = new LayerControl(retailControlDiv, retail_layer);
+  retailControlDiv.index = 1;
+  map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push(retailControlDiv);
+
+  // Add ATM layer controller
+  var atmControlDiv = document.getElementById("atm-toggler")
+  var atmControl = new LayerControl(atmControlDiv, atm_layer);
+  atmControlDiv.index = 3;
+  map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push(atmControlDiv);
 
   // Search
   var markers = [];
@@ -159,28 +207,6 @@ function initialize() {
   });
 }
 
-function foundLocation(position) {
-  var pos = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-  map.setZoom(defaultZoom);it
-  map.setCenter(pos);
-
-  // Only add layers upon first zoom
-  retail_layer.setMap(map)
-  atm_layer.setMap(map)
-}
-
-function handleNoGeolocation() {
-  var content = 'Error: The Geolocation service failed.';
-
-  var options = {
-    map: map,
-    position: new google.maps.LatLng(60, 105), // Don't start in Russia :(
-    content: content
-  };
-
-  map.setCenter(options.position);
-}
-
 google.maps.event.addDomListener(window, 'load', initialize);
 
     </script>
@@ -198,6 +224,9 @@ google.maps.event.addDomListener(window, 'load', initialize);
         </button>
       </div>
     </header>
+    <div class="layer-controls" style="display:none">
+      <div id="retail-toggler">Stores</div>
+      <div id="atm-toggler">ATMs</div>
     </div>
     <input id="pac-input" class="sb-search-input" placeholder="Search by address" type="search" name="search" style="display:hidden">
     <div id="map-canvas"></div>
@@ -211,9 +240,7 @@ google.maps.event.addDomListener(window, 'load', initialize);
 </script>
 
 <!-- S H O W   A N D   H I D E   S E A R C H -->
-
 <script>
-
 // With the element initially shown, we can hide it slowly:
 $( "#toggle-target" ).click(function() {
   if ($("#pac-input").is(':visible')) {

@@ -124,6 +124,7 @@ h1#title-thin {
 }
 
 #map-canvas {
+	margin-top: -4em;
 	height: 100%;
 	margin: 0;
 	padding: 0;
@@ -157,4 +158,16 @@ h1#title-thin {
 	#map-canvas {
 		height: 100%;
 	}
+}
+
+/* Custom map controls */
+.layer-controls {
+	
+}
+
+#retail-toggler, #atm-toggler {
+	font-size: 20px;
+	cursor: pointer;
+	padding: 20px;
+	display: block;
 }
